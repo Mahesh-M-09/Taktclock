@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Takt Time Clock</title>
+<style>
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #eee;
+}
+.dashboard {
+    width: 90%;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.header {
+    background-color: black;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-size: 24px;
+}
+.main-display {
+    display: flex;
+    justify-content: space-around;
+    padding: 20px;
+}
+.timer {
+    font-size: 48px;
+    color: green;
+    margin: 20px;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+.timer.user-takt {
+    font-size: 72px; /* Larger font size for User Takt */
+    color: darkred;  /* Different color for emphasis */
+    flex: 1 1 70%;   /* Takes more space */
+}
+.info {
+    text-align: center;
+    margin-top: 10px;
+}
+.controls {
+    text-align: center;
+}
+.set-takt {
+    margin-top: 20px;
+    text-align: center;
+}
+input[type="text"], button {
+    font-size: 20px;
+    padding: 10px;
+    margin: 5px;
+    cursor: pointer;
+}
+.footer {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+.targets div, .finished {
+    margin: 5px;
+    padding: 10px 20px;
+}
+.finished {
+    background-color: green;
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="header">BROMPTON LINE1</div>
+    <div class="main-display">
+        <div>
+            <div class="timer" id="actualTaktDisplay">01:42</div>
+            <div class="info">Actual Takt</div>
+            <div class="info">Actual Bikes: <span id="actualBikeCount">0</span></div>
+        </div>
+        <div>
+            <div class="timer user-takt" id="userTaktDisplay">01:42</div>
+            <div class="info">User Takt</div>
+            <div class="info">Current: <span id="currentProduction">0</span></div>
+        </div>
+    </div>
+    <div class="controls">
+        <button onclick="finishBike()">FINISHED BIKE</button>
+    </div>
+    <div class="set-takt">
+        <input type="text" id="taktTimeInput" value="01:42" placeholder="Set Takt Time (mm:ss)">
+        <button onclick="setTaktTime()">SET TAKT</button>
+    </div>
+    <div class="footer">
+        <div class="targets">
+            <div>Target: <span id="target">300</span></div>
+            <div>Target Remaining: <span id="targetRemaining">299</span></div>
+        </div>
+    </div>
+</div>
+<script>
+let initialTaktTime = 102000; // Default takt time in milliseconds (01:42)
+let actualTaktTime = initialTaktTime;
+let userTaktTime = initialTaktTime;
+let actualTimer = setInterval(updateActualTakt, 1000);
+let userTimer = setInterval(updateUserTakt, 1000);
+let actualBikes = 0;
+let currentProduction = 0;
+let target = 300;
+let targetRemaining = 299;
+
+function updateActualTakt() {
+    actualTaktTime -= 1000;
+    if (actualTaktTime <= 0) {
+        actualBikes++;
+        document.getElementById('actualBikeCount').textContent = actualBikes;
+        actualTaktTime = initialTaktTime;
+    }
+    document.getElementById('actualTaktDisplay').textContent = formatTime(actualTaktTime);
+}
+
+function updateUserTakt() {
+    userTaktTime -= 1000;
+    if (userTaktTime < 0) {
+        document.getElementById('userTaktDisplay').style.color = 'red';
+    }
+    document.getElementById('userTaktDisplay').textContent = formatTime(userTaktTime);
+}
+
+function finishBike() {
+    currentProduction++;
+    document.getElementById('currentProduction').textContent = currentProduction;
+    targetRemaining = target - currentProduction;
+    document.getElementById('targetRemaining').textContent = targetRemaining;
+    resetUserTakt();
+}
+
+function resetUserTakt() {
+    userTaktTime = initialTaktTime;
+    document.getElementById('userTaktDisplay').style.color = 'green';
+    document.getElementById('userTaktDisplay').textContent = formatTime(userTaktTime);
+}
+
+function setTaktTime() {
+    initialTaktTime = getTimeFromInput();
+    let workTimeInSeconds = (8.5 * 3600);
+    target = Math.floor(workTimeInSeconds / (initialTaktTime / 1000));
+    targetRemaining = target;
+    document.getElementById('target').textContent = target;
+    document.getElementById('targetRemaining').textContent = targetRemaining;
+    actualTaktTime = initialTaktTime;
+    userTaktTime = initialTaktTime;
+    document.getElementById('userTaktDisplay').textContent = formatTime(userTaktTime);
+    document.getElementById('actualTaktDisplay').textContent = formatTime(actualTaktTime);
+}
+
+function getTimeFromInput() {
+    let input = document.getElementById('taktTimeInput').value.split(':');
+    let minutes = parseInt(input[0]);
+    let seconds = parseInt(input[1]);
+    return (minutes * 60 + seconds) * 1000;
+}
+
+function formatTime(ms) {
+    let totalSeconds = Math.floor(ms / 1000);
+    let seconds = Math.abs(totalSeconds % 60);
+    let minutes = Math.floor(totalSeconds / 60);
+    return `${minutes >= 0 ? "" : "-"}${Math.abs(minutes).toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+</script>
+</body>
+</html>
